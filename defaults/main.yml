@@ -247,7 +247,7 @@ ansible_influx_queries:
     , mean(io_queue_recursive_async) AS io_queue_recursive_async
     , mean(io_queue_recursive_read) AS io_queue_recursive_read
     , mean(io_queue_recursive_sync) AS io_queue_recursive_sync
-    , mean(io_queue_recursive_total) AS io_queue_recursive_totali
+    , mean(io_queue_recursive_total) AS io_queue_recursive_total
     , mean(io_queue_recursive_write) AS io_queue_recursive_write
     , mean(io_service_bytes_recursive_async) AS io_service_bytes_recursive_async
     , mean(io_service_bytes_recursive_read) AS io_service_bytes_recursive_read
