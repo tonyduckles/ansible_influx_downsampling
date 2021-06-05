@@ -5,6 +5,8 @@
     ifx_mm: "{{ ifx_db.measurements[measurement] }}"
     cq_counter: "{{ cq_counter|default(0)|int + 1 }}" # 1, 2, 3, 4, ...
     cq_old_match: "{{ ifx_cqs|select('match', 'cq_' + measurement + '_.*')|list }}"
+    mm_select: ""
+    mm_select_fields: []
 
 - name: '{{ ifx_db.name }}/{{ measurement }} - Set simple defaults'
   set_fact:
@@ -16,7 +18,6 @@
     bf_groupby: "{{ ifx_mm.groupby if ifx_mm.groupby is defined else ifx_bf_groupby }}"
     bf_interval: "{{ ifx_mm.interval if ifx_mm.interval is defined else ifx_bf_interval }}"
     cq_name: "{{ 'cq_'+measurement+'_'+ (ifx_mm.interval if ifx_mm.interval is defined else ifx_cq_interval_name) }}"
-    cq_select: "{{ ifx_mm.select if ifx_mm.select is defined else ansible_influx_queries[measurement] }}"
     cq_groupby:  "{{ ifx_mm.groupby if ifx_mm.groupby is defined else ifx_cq_groupby }}"
     cq_where: "{{ 'WHERE '+ifx_mm.where if ifx_mm.where is defined else ifx_cq_where }}"
     cq_offset: "{{ ','+(cq_counter|int*ifx_cq_offset|int)|string+ifx_cq_offset_unit if ifx_cq_offset else '' }}"
@@ -32,8 +33,7 @@
 
 - name: '{{ mm_prefix }} Set dependent defaults'
   set_fact:
-    # select * when backfill interval='*'
-    bf_select: "{{ 'SELECT *' if ifx_bf_enabled and ifx_bf_interval == '*' else cq_select }}"
+    mm_aggfunc: "{{ ansible_influx_mms_fields_aggfunc[measurement] | default({}) }}"
     mm_offset: "{{ ','+(cq_counter|int*mm_cq_offset|int)|string+mm_cq_offset_unit if mm_cq_offset else '' }}"
     bf_groupby_string: "{{ ','+bf_groupby|join(',') if bf_groupby|length > 0 else '' }}"
     cq_groupby_string: "{{ ','+cq_groupby|join(',') if cq_groupby|length > 0 else '' }}"
@@ -99,6 +99,42 @@
       |selectattr('series', 'defined')|map(attribute='series')|flatten
       |rejectattr('values', 'callable')|map(attribute='values')|flatten
       |select('match', '^(?!integer|float|string).*$')|list|default([]) }}"
+
+- name: '{{ mm_prefix }} Determine field aggregation functions from SOURCE'
+  set_fact:
+    mm_select_fields: "{{ (mm_select_fields|default([]))
+      + [ { 'key': field.key,
+            'type': field.type,
+            'aggfunc': (
+              mm_aggfunc[field.key] if mm_aggfunc[field.key] is defined
+              else 'mode' if ((field.type == 'string') or (field.type == 'boolean'))
+              else 'mean'
+            ) } ] }}"
+  loop: "{{ ansible_influx_mm_fields.json.results
+    | json_query(\"[0].series[0].values[*].{ key:[0], type:[1] }\") }}"
+  loop_control:
+    loop_var: field
+
+- name: '{{ mm_prefix }} Generate select-fields query from SOURCE'
+  set_fact:
+    # SELECT mean(field) AS field, ...
+    mm_select: "{{ (mm_select+', ' if (mm_select|length > 0) else 'SELECT ') +
+                   field.aggfunc+'(\"'+field.key+'\") AS \"'+field.key+'\"' }}"
+  loop: "{{ mm_select_fields }}"
+  loop_control:
+    loop_var: field
+
+- name: '{{ mm_prefix }} Set select-fields query string'
+  set_fact:
+    cq_select: "{{ ifx_mm.select if ifx_mm.select is defined
+      else ansible_influx_queries[measurement] if ansible_influx_queries[measurement] is defined
+      else mm_select }}"
+
+- name: '{{ mm_prefix }} Set select-fields query string, dependent defaults'
+  set_fact:
+    # select * when backfill interval='*'
+    bf_select: "{{ 'SELECT *' if ifx_bf_enabled and ifx_bf_interval == '*'
+      else cq_select }}"
 
 - name: '{{ mm_prefix }} List fields'
   debug: msg="Fields of {{ measurement }} - {{ ifx_mm_fields|join(',') }}"
