@@ -80,7 +80,7 @@
   register: ansible_influx_mm_count
   when: ifx_bf_enabled and measurement not in ifx_mms and ifx_source_defined and ifx_bf_stats
 
-- name: '{{ mm_prefix }} Calcuate SOURCE measurement count'
+- name: '{{ mm_prefix }} Calculate SOURCE measurement count'
   set_fact:
     mm_count_source: "{{ ansible_influx_mm_count.json.results
       |selectattr('series','defined')|map(attribute='series')|flatten
@@ -190,7 +190,7 @@
   register: ansible_influx_mm_count
   when: ifx_bf_enabled and ifx_source_defined and mm_backfill_result|int > 0
 
-- name: '{{ mm_prefix }} Calcuate TARGET measurement count'
+- name: '{{ mm_prefix }} Calculate TARGET measurement count'
   set_fact:
     mm_count: "{{ ansible_influx_mm_count.json.results
       |selectattr('series','defined')|map(attribute='series')|flatten
@@ -209,5 +209,5 @@
   set_fact:
     mm_backfill_totals: "{{ mm_backfill_totals|union([ mm_backfill_result ]) }}"
     mm_downsampling_totals: "{{ mm_downsampling_totals
-     |union([ mm_count|int/mm_count_source|int*100 ]) if ifx_bf_stats else mm_downsampling_totals }}"
+      |union([ mm_count|int/mm_count_source|int*100 ]) if ifx_bf_stats else mm_downsampling_totals }}"
   when: ifx_bf_stats and mm_count is defined and mm_count_source|int > 0

@@ -286,6 +286,7 @@
     url_password: "{{ password }}"
   register: ansible_influx_newmetrics
   when: ifx_source_drop and ifx_source_exists
+
 - name: '{{ db_prefix }} Set count_newmetrics'
   set_fact:
     count_newmetrics: "{{ 0 if ansible_influx_newmetrics.json.results[0].series is not defined else
