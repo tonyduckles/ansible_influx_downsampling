@@ -71,6 +71,7 @@
   uri:
     url: "{{ ansible_influx_url }}/query?db={{ ifx_db.source.name }}"
     method: POST
+    timeout: "{{ ansible_influx_timeout }}"
     body: >
       q=SELECT COUNT(*) FROM {{ source_mm }}
       WHERE time >= now() - {{ ifx_rp_duration }}
@@ -221,6 +222,7 @@
   uri:
     url: "{{ ansible_influx_url }}/query?db={{ ifx_db.name }}"
     method: POST
+    timeout: "{{ ansible_influx_timeout }}"
     body: "q=SELECT COUNT(*) FROM {{ target_mm }}"
     return_content: yes
     url_username: "{{ username }}"
