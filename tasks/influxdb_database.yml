@@ -231,21 +231,26 @@
       if ifx_source_defined and ifx_source_rp_name else false }}"
     ifx_backfill_start: "{{ lookup('pipe','date +%s') }}"
 
-#- debug: var=ansible_influx_source_rps
-#- debug: msg="source_exists = {{ ifx_db.source.rp_name }} in {{ ifx_source_rps }} if {{ ifx_source_defined }}
-#    and {{ ifx_source_rp_name }} else false"
+#- debug:
+#    var: ansible_influx_source_rps
+#- debug:
+#    msg: "source_exists = {{ ifx_db.source.rp_name }} in {{ ifx_source_rps }}
+#          if {{ ifx_source_defined }} and {{ ifx_source_rp_name }} else false"
 
 - name: '{{ db_prefix }} Source must exist for compact'
-  debug: msg="Source '{{ ifx_db.source.name }}.{{ ifx_source_rp_name }}' must exist, skipping measurements and backfill"
+  debug:
+    msg: "Source '{{ ifx_db.source.name }}.{{ ifx_source_rp_name }}' must exist, skipping measurements and backfill"
   when: ifx_source_drop and not ifx_source_exists
 
-- name: '{{ db_prefix }} Print SOURCE  measurements'
-  debug: msg="List of measurements on SOURCE = {{ ifx_source_mms|join(', ') }}"
+- name: '{{ db_prefix }} Print SOURCE measurements'
+  debug:
+    msg: "List of measurements on SOURCE = {{ ifx_source_mms|join(', ') }}"
   when: ifx_source_defined and not ifx_source_drop and ifx_source_exists
   failed_when: ifx_source_mms|length == 0
 
 - name: '{{ db_prefix }} Print TARGET measurements'
-  debug: msg="List of measurements on TARGET = {{ ifx_mms|join(', ') }}"
+  debug:
+    msg: "List of measurements on TARGET = {{ ifx_mms|join(', ') }}"
   when: ifx_mms|length > 0
 
 - name: '{{ db_prefix }} Create retention policy {{ ifx_rp_name }}'
@@ -344,13 +349,15 @@
       |map(attribute='values')|flatten|select('number')|map('int')|sum(start=0) }}"
   when: ansible_influx_bf_closegap is not skipped
 
-#- debug: msg="{{ ansible_influx_bf_closegap.json.results
-#      |selectattr('series', 'defined')|map(attribute='series')|flatten
-#      |map(attribute='values')|flatten }}"
+#- debug:
+#    msg="{{ ansible_influx_bf_closegap.json.results
+#         |selectattr('series', 'defined')|map(attribute='series')|flatten
+#         |map(attribute='values')|flatten }}"
 #  when: ansible_influx_bf_closegap is not skipped
 
 - name: '{{ db_prefix }} Backfill again points written'
-  debug: msg="Total data points written = {{ db_backfill_closegap+db_backfill_closegap2 }}"
+  debug:
+    msg: "Total data points written = {{ db_backfill_closegap+db_backfill_closegap2 }}"
   when: ansible_influx_bf_closegap is not skipped
 
 - name: '{{ db_prefix }} Make RP the default'
@@ -368,16 +375,19 @@
     and ansible_influx_rp_alter.json.results[0].statement_id == 0
 
 - name: '{{ db_prefix }} Total data points written'
-  debug: msg="Total data points written = {{ mm_backfill_totals|map('int')|sum(start=0) }}"
+  debug:
+    msg: "Total data points written = {{ mm_backfill_totals|map('int')|sum(start=0) }}"
   when: ifx_bf_enabled
 
 - name: '{{ db_prefix }} Average series downsampling'
-  debug: msg="Average series downsampling =
-    {{ (mm_downsampling_totals|map('float')|sum(start=0) / mm_downsampling_totals|length) |round(2) }} %"
+  debug:
+    msg: "Average series downsampling =
+          {{ (mm_downsampling_totals|map('float')|sum(start=0) / mm_downsampling_totals|length) |round(2) }} %"
   when: ifx_bf_enabled and mm_downsampling_totals|length > 0
 
 - name: '{{ db_prefix }} Total duration'
-  debug: msg="Total duration = {{ (lookup('pipe','date +%s')|int - ifx_backfill_start|int)/60 }} minutes"
+  debug:
+    msg: "Total duration = {{ (lookup('pipe','date +%s')|int - ifx_backfill_start|int)/60 }} minutes"
 
 - name: '{{ db_prefix }} Drop old RP (compact)'
   uri:

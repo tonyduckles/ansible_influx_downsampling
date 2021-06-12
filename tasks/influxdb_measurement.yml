@@ -48,12 +48,14 @@
 
 - name: '{{ mm_prefix }} Run mode "{{ ifx_mode }}" on "{{ ifx_db.name }}/{{ measurement }}"
     with CQ interval "{{ cq_interval_string }}"'
-  debug: var=cq_interval_string
+  debug:
+    var: cq_interval_string
   when: ifx_cq_enabled
 
 - name: '{{ mm_prefix }} Run mode "{{ ifx_mode }}" on "{{ ifx_db.name }}/{{ measurement }}"
     with BF interval "{{ bf_interval_string }}"'
-  debug: var=bf_interval_string
+  debug:
+    var: bf_interval_string
   when: ifx_bf_enabled and not ifx_cq_enabled
 
 - name: '{{ mm_prefix }} Get fields from SOURCE'
@@ -91,7 +93,8 @@
     and ansible_influx_mm_count.json.results[0].series is defined
 
 - name: '{{ mm_prefix }} Count on SOURCE'
-  debug: msg="Max count on SOURCE {{ measurement }} = {{ mm_count_source }}"
+  debug:
+    msg: "Max count on SOURCE {{ measurement }} = {{ mm_count_source }}"
   when: mm_count_source|int > 0
 
 - name: '{{ mm_prefix }} Create list of fields'
@@ -138,11 +141,13 @@
       else cq_select }}"
 
 - name: '{{ mm_prefix }} List fields'
-  debug: msg="Fields of {{ measurement }} - {{ ifx_mm_fields|join(',') }}"
+  debug:
+    msg: "Fields of {{ measurement }} - {{ ifx_mm_fields|join(',') }}"
 
 - name: '{{ mm_prefix }} Backfilling {{ measurement }} ({{ ifx_rp_name }}) from {{ source_mm }}
     with {{ ifx_rp_amount }}/{{ ifx_bf_step }} steps'
-  debug: msg="Sequence start={{ ifx_rp_amount|int }} end={{ ifx_bf_step|int }} stride=-{{ ifx_bf_step|int }}"
+  debug:
+    msg: "Sequence start={{ ifx_rp_amount|int }} end={{ ifx_bf_step|int }} stride=-{{ ifx_bf_step|int }}"
 
 - name: '{{ mm_prefix }} Backfilling measurement'
   uri:
@@ -172,7 +177,8 @@
       and not 'points beyond retention policy dropped' in ansible_influx_mm_backfill.json.results[0].error )
 
 - name: '{{ mm_prefix }} Print result from backfill'
-  debug: var=ansible_influx_mm_backfill.results|map(attribute='json.results')|list
+  debug:
+    var: ansible_influx_mm_backfill.results|map(attribute='json.results')|list
   when: (ansible_influx_mm_backfill is succeeded
     and ansible_influx_mm_backfill is not skipped
     and (ansible_influx_mm_backfill.results|map(attribute='skipped')|reject('undefined')|flatten|default([])|unique != [ true ])
@@ -188,10 +194,12 @@
   when: ifx_bf_enabled and ansible_influx_mm_backfill is changed
 
 - name: '{{ mm_prefix }} Backfill results'
-  debug: msg="Total data points written = {{ mm_backfill_result }}"
+  debug:
+    msg: "Total data points written = {{ mm_backfill_result }}"
   when: ifx_bf_enabled and ansible_influx_mm_backfill is changed
 
-#- debug: msg="{{ 'cq_' + measurement + '_.*' }} in {{ ifx_cqs }} = {{ cq_old_match }} -> DROP {{ drop_cq_name }}"
+#- debug:
+#    msg: "{{ 'cq_' + measurement + '_.*' }} in {{ ifx_cqs }} = {{ cq_old_match }} -> DROP {{ drop_cq_name }}"
 
 # always drop and recreate CQ (we cannot update it) - IFF CQ is enabled
 - name: '{{ mm_prefix }} Drop continuous query {{ drop_cq_name }}'
@@ -238,11 +246,13 @@
   when: ansible_influx_mm_count is not skipped and ansible_influx_mm_count.json.results is defined
 
 - name: '{{ mm_prefix }} Count on TARGET'
-  debug: msg="Max count on TARGET {{ measurement }} = {{ mm_count }}"
+  debug:
+    msg: "Max count on TARGET {{ measurement }} = {{ mm_count }}"
   when: mm_count is defined
 
 - name: '{{ mm_prefix }} Series downsampling'
-  debug: msg="{{ mm_count }}/{{ mm_count_source }} = {{ (mm_count|int/mm_count_source|int*100)|round(2) }} %"
+  debug:
+    msg: "{{ mm_count }}/{{ mm_count_source }} = {{ (mm_count|int/mm_count_source|int*100)|round(2) }} %"
   when: mm_count is defined and mm_count_source|int > 0 and ifx_bf_stats
 
 - name: '{{ mm_prefix }} Collect stats'
